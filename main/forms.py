@@ -1,10 +1,10 @@
-from django import forms
-from .models import Comment
-from captcha.fields import CaptchaField
-import bleach
-from PIL import Image
-from django.core.exceptions import ValidationError
 import os
+from PIL import Image
+import bleach
+from django import forms
+from django.core.exceptions import ValidationError
+from captcha.fields import CaptchaField
+from .models import Comment
 
 
 class CommentForm(forms.ModelForm):
