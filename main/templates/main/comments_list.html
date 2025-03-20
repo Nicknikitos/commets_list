@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Комментарии</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .comment-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .comment-text {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .reply {
+            margin-left: 30px;
+            background-color: #f0f0f0;
+        }
+
+        .comment-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .comment-image {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 15px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .comment-button {
+            margin-top: 20px; /* Отступ сверху */
+            margin-bottom: 15px; /* Отступ снизу */
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .comment-button:hover {
+            background-color: #45a049;
+        }
+
+        #toolbar {
+            margin-bottom: 10px;
+        }
+
+        #toolbar button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .username {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .comment-content p {
+            margin: 0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Комментарии</h1>
+
+        {% if page_obj %}
+            <div>
+                {% for comment in page_obj %}
+                    <div class="comment-card">
+                        <div class="comment-header">
+                            <span class="username">{{ comment.username }}</span>
+                            <span class="timestamp">{{ comment.created_at }}</span>
+                        </div>
+
+                        <div class="comment-content">
+                            <p class="comment-text">{{ comment.text }}</p>
+
+                            {% if comment.image %}
+                                <img src="{{ comment.image.url }}" alt="Image" class="comment-image">
+                            {% endif %}
+                        </div>
+
+                        <!-- Кнопка "Ответить" с дополнительными отступами -->
+                        <button class="comment-button" onclick="showReplyForm('{{ comment.id }}')">Ответить</button>
+
+                        <!-- Форма ответа (скрыта по умолчанию) -->
+                        <div id="reply-form-{{ comment.id }}" style="display:none;">
+                            <form method="POST" action="{% url 'comments_list' %}" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="parent" value="{{ comment.id }}">
+                                {{ form.as_p }}
+                                <button type="submit">Ответить</button>
+                            </form>
+                        </div>
+
+                        <!-- Рекурсивный вывод ответов -->
+                        {% for reply in comment.replies.all %}
+                            <div class="comment-card reply">
+                                {% include "main/comment_card.html" with comment=reply %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Пагинация -->
+            <div>
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">&laquo; первая</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
+                    {% endif %}
+
+                    <span class="current">
+                        Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">следующая</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">последняя &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+        {% else %}
+            <p>Комментариев пока нет.</p>
+        {% endif %}
+
+        <hr>
+
+        <h2>Добавить комментарий</h2>
+
+        <!-- Форма добавления нового комментария -->
+        <form method="POST" action="{% url 'comments_list' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Отправить комментарий</button>
+        </form>
+    </div>
+
+    <script>
+        function showReplyForm(commentId) {
+            let form = document.getElementById("reply-form-" + commentId);
+            form.style.display = form.style.display === "none" ? "block" : "none";
+        }
+    </script>
+</body>
+</html>
